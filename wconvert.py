@@ -3,6 +3,11 @@
 
 import os, win32com.client, gc, sys, getopt, argparse
 
+# 判断word文件是否加密
+def is_encrypt_word(filePath):
+    with open(filePath, 'rb') as f:
+        if b'PK' not in f.readline():
+            return True
 
 def word2Pdf(filePath, newFileName, toPath):
     # 开始转换
@@ -19,12 +24,16 @@ def word2Pdf(filePath, newFileName, toPath):
             toFileName = changeSufix2Pdf(fileName)
         else:
             toFileName = newFileName + '.pdf'
-
         # 生成文件保存地址
         if toPath == None:
             toFile = toFileJoin(os.getcwd(), toFileName)
         else:
             toFile = toFileJoin(toPath, toFileName)
+        if is_encrypt_word(filePath):
+            print('该文档被加密！')
+            word.Quit()
+            word = None
+            return
         # 某文件出错不影响其他文件打印
         try:
             doc = word.Documents.Open(filePath)
@@ -35,12 +44,12 @@ def word2Pdf(filePath, newFileName, toPath):
         # 关闭 Word 进程
         doc.Close()
         doc = None
-        word.Quit()
-        word = None
-
     except Exception as e:
         print(e)
     finally:
+        if word != None:
+            word.Quit()
+            word = None
         gc.collect()
 
 
